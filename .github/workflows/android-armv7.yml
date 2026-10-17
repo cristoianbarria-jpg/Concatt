@@ -1,0 +1,37 @@
+name: Build Android armv7
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@master
+        with:
+          toolchain: 1.93.1
+          targets: armv7-linux-androideabi
+
+      - name: Install cargo-ndk and cargo-apk
+        run: cargo install cargo-ndk cargo-apk
+
+      - name: Build dependencies (FFmpeg & sherpa-onnx)
+        run: |
+          chmod +x scripts/*.sh
+          scripts/ffmpeg-mobile.sh armv7-linux-androideabi
+          scripts/sherpa-mobile.sh armv7-linux-androideabi
+
+      - name: Setup environment and build APK
+        run: |
+          eval "$(scripts/mobile-env.sh armv7-linux-androideabi)"
+          cargo ndk -t armeabi-v7a --platform 26 build -p concat-android --release
+          cargo apk build --release -p concat-android
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Concat-Android-armv7
+          path: target/android/apk/release/*.apk
