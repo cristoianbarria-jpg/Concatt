@@ -15,10 +15,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android NDK
-        uses: nsetup/setup-android-ndk@v1
-        with:
-          ndk-version: r25c
+      - name: Download and setup Android NDK
+        run: |
+          ANDROID_NDK_VERSION=r25c
+          echo "Descargando Android NDK..."
+          wget -q https://dl.google.com/android/repository/android-ndk-${ANDROID_NDK_VERSION}-linux.zip
+          echo "Descomprimiendo..."
+          unzip -q android-ndk-${ANDROID_NDK_VERSION}-linux.zip
+          echo "ANDROID_NDK_HOME=$PWD/android-ndk-${ANDROID_NDK_VERSION}" >> $GITHUB_ENV
+          echo "NDK configurado con éxito en la raíz."
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
@@ -38,6 +43,7 @@ jobs:
       - name: Build APK
         run: |
           eval "$(scripts/mobile-env.sh armv7-linux-androideabi)"
+          export ANDROID_NDK_HOME=$PWD/android-ndk-r25c
           cargo ndk -t armeabi-v7a --platform 26 build -p concat-android --release
           cargo apk build --release -p concat-android
 
