@@ -9,13 +9,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android NDK
+        uses: nsetup/setup-android-ndk@v1
+        with:
+          ndk-version: r25c
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.93.1
           targets: armv7-linux-androideabi
 
-      - name: Install cargo-ndk and cargo-apk
+      - name: Install cargo tools
         run: cargo install cargo-ndk cargo-apk
 
       - name: Build dependencies (FFmpeg & sherpa-onnx)
@@ -24,7 +35,7 @@ jobs:
           scripts/ffmpeg-mobile.sh armv7-linux-androideabi
           scripts/sherpa-mobile.sh armv7-linux-androideabi
 
-      - name: Setup environment and build APK
+      - name: Build APK
         run: |
           eval "$(scripts/mobile-env.sh armv7-linux-androideabi)"
           cargo ndk -t armeabi-v7a --platform 26 build -p concat-android --release
